@@ -7,26 +7,11 @@ import ConnectivityBanner from "./components/ConnectivityBanner";
 import { QRCodeVerification } from "@mosip/react-inji-verify-sdk";
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
 
-
 import "./App.css";
 
 function ScanPage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Handle VP from QR code
-  const handleScan = async (vpResult: string) => {
-    try {
-      const cleanResult = vpResult.trim();
-      console.log("✅ Scanned VP string (first 100 chars):", cleanResult.slice(0, 100));
-      setResult(cleanResult);
-      await storeResult(cleanResult);
-      console.log("✅ Stored verification result");
-    } catch (err: any) {
-      console.error("❌ Storing verification failed:", err);
-      setError("Could not store verification result.");
-    }
-  };
 
   return (
     <div className="container">
