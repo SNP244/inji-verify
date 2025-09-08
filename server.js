@@ -2,11 +2,17 @@
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Resolve __dirname (since we use ES modules)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+// Middleware
 app.use(cors());
 app.use(bodyParser.json({ limit: "5mb" }));
 app.use(
@@ -19,7 +25,7 @@ app.use(
 let verificationLogs = [];
 let logCounter = 1;
 
-// Helper: decode base64url safely
+// --- Helper: decode base64url safely ---
 function base64urlToString(s) {
   try {
     let b64 = s.replace(/-/g, "+").replace(/_/g, "/");
@@ -71,16 +77,16 @@ app.post("/v1/verify", (req, res) => {
     "📥 RAW BODY TYPE:",
     typeof body,
     "VALUE (first 200):",
-    typeof body === "string" ? body.slice(0, 200) : JSON.stringify(body).slice(0, 200)
+    typeof body === "string"
+      ? body.slice(0, 200)
+      : JSON.stringify(body).slice(0, 200)
   );
 
   try {
     if (typeof body === "string") {
-      // Try JSON
       try {
         vpObj = JSON.parse(body);
       } catch {
-        // Try base64url decode
         const decoded = base64urlToString(body);
         if (decoded) {
           try {
@@ -99,7 +105,10 @@ app.post("/v1/verify", (req, res) => {
     vpObj = { raw: String(body) };
   }
 
-  console.log("📥 /v1/verify final parsed object:", JSON.stringify(vpObj).slice(0, 200));
+  console.log(
+    "📥 /v1/verify final parsed object:",
+    JSON.stringify(vpObj).slice(0, 200)
+  );
 
   const fakeResult = [
     {
@@ -112,11 +121,15 @@ app.post("/v1/verify", (req, res) => {
   res.json(fakeResult);
 });
 
-// --- Catch-all ---
-app.use((req, res) => {
-  res.status(404).json({ error: "Not found", path: req.originalUrl });
+// --- Serve React frontend (dist/) ---
+app.use(express.static(path.join(__dirname, "dist")));
+
+// --- Catch-all: serve index.html for React Router ---
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
+// --- Start server ---
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
