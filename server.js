@@ -2,17 +2,12 @@
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import path from "path";
-import { fileURLToPath } from "url";
+import Database from "better-sqlite3";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Resolve __dirname (since we use ES modules)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Middleware
+// ------------------- Middleware -------------------
 app.use(cors());
 app.use(bodyParser.json({ limit: "5mb" }));
 app.use(
@@ -22,10 +17,36 @@ app.use(
   })
 );
 
-let verificationLogs = [];
-let logCounter = 1;
+// ------------------- Initialize SQLite DB -------------------
+const db = new Database("./inji-verify.db");
 
-// --- Helper: decode base64url safely ---
+// Create tables if they don't exist
+db.prepare(
+  `CREATE TABLE IF NOT EXISTS logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data TEXT NOT NULL,
+    synced INTEGER DEFAULT 0,
+    serverTimestamp INTEGER
+  )`
+).run();
+
+db.prepare(
+  `CREATE TABLE IF NOT EXISTS revocations (
+    id TEXT PRIMARY KEY,
+    reason TEXT
+  )`
+).run();
+
+// Insert default revocation entries if empty
+const existing = db.prepare("SELECT COUNT(*) AS cnt FROM revocations").get();
+if (existing.cnt === 0) {
+  const insert = db.prepare("INSERT INTO revocations (id, reason) VALUES (?, ?)");
+  insert.run("cred123", "Compromised");
+  insert.run("cred999", "Expired");
+  console.log("📄 Initialized revocation list in DB");
+}
+
+// ------------------- Helper -------------------
 function base64urlToString(s) {
   try {
     let b64 = s.replace(/-/g, "+").replace(/_/g, "/");
@@ -36,29 +57,46 @@ function base64urlToString(s) {
   }
 }
 
-// --- Health check ---
+// ------------------- Health Check -------------------
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: Date.now() });
 });
 
-// --- Store logs ---
+// ------------------- Logs Endpoints -------------------
+// POST: store log
 app.post("/api/logs", (req, res) => {
-  const log = {
-    id: logCounter++,
-    ...req.body,
-    serverTimestamp: Date.now(),
-  };
-  verificationLogs.push(log);
-  console.log("📥 Received log:", log);
-  res.status(201).json({ success: true, log });
+  const data = JSON.stringify(req.body);
+  const serverTimestamp = Date.now();
+
+  // Always mark as synced because server received it successfully
+  const synced = 1;
+
+  const stmt = db.prepare(`
+    INSERT INTO logs (data, synced, serverTimestamp)
+    VALUES (?, ?, ?)
+  `);
+
+  const info = stmt.run(data, synced, serverTimestamp);
+  console.log("📥 Stored log in DB:", { id: info.lastInsertRowid, synced });
+
+  res.status(201).json({ success: true, id: info.lastInsertRowid });
 });
 
-// --- Fetch all logs ---
+
+
+// GET: fetch all logs
 app.get("/api/logs", (req, res) => {
-  res.json(verificationLogs);
+  const rows = db.prepare("SELECT * FROM logs ORDER BY id DESC").all();
+  res.json(rows);
 });
 
-// --- SDK expects metadata endpoint ---
+// ------------------- Revocation Endpoint -------------------
+app.get("/api/revocations", (req, res) => {
+  const rows = db.prepare("SELECT * FROM revocations").all();
+  res.json(rows);
+});
+
+// ------------------- SDK Metadata Endpoint -------------------
 app.get("/v1/verify/vc-verification", (req, res) => {
   res.json({
     status: "AVAILABLE",
@@ -68,19 +106,10 @@ app.get("/v1/verify/vc-verification", (req, res) => {
   });
 });
 
-// --- Verification endpoint ---
+// ------------------- Verification Endpoint -------------------
 app.post("/v1/verify", (req, res) => {
   const body = req.body;
   let vpObj = null;
-
-  console.log(
-    "📥 RAW BODY TYPE:",
-    typeof body,
-    "VALUE (first 200):",
-    typeof body === "string"
-      ? body.slice(0, 200)
-      : JSON.stringify(body).slice(0, 200)
-  );
 
   try {
     if (typeof body === "string") {
@@ -105,31 +134,34 @@ app.post("/v1/verify", (req, res) => {
     vpObj = { raw: String(body) };
   }
 
-  console.log(
-    "📥 /v1/verify final parsed object:",
-    JSON.stringify(vpObj).slice(0, 200)
-  );
+  // Revocation check from DB
+  const credId = vpObj?.vc?.id || vpObj?.id || null;
+  const revokedEntry = credId
+    ? db.prepare("SELECT * FROM revocations WHERE id = ?").get(credId)
+    : null;
 
-  const fakeResult = [
-    {
-      vc: vpObj,
-      vcStatus: "SUCCESS",
-      message: "Mock verification succeeded (offline demo)",
-    },
-  ];
+  const result = {
+    verified: !revokedEntry,
+    revoked: !!revokedEntry,
+    status: revokedEntry ? "revoked" : "success",
+    issuer: vpObj?.issuer || vpObj?.vc?.issuer || "Demo Issuer",
+    subject: vpObj?.subject || vpObj?.vc?.credentialSubject?.id || "Demo Subject",
+    checkedAt: new Date().toISOString(),
+    message: revokedEntry
+      ? `This credential has been revoked: ${revokedEntry.reason}`
+      : "Mock verification succeeded (offline demo)",
+    raw: vpObj,
+  };
 
-  res.json(fakeResult);
+  res.json(result);
 });
 
-// --- Serve React frontend (dist/) ---
-app.use(express.static(path.join(__dirname, "dist")));
-
-// --- Catch-all: serve index.html for React Router ---
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+// ------------------- Catch-All -------------------
+app.use((req, res) => {
+  res.status(404).json({ error: "Not found", path: req.originalUrl });
 });
 
-// --- Start server ---
+// ------------------- Start Server -------------------
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });

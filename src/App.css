@@ -9,6 +9,7 @@ body {
   font-family: 'Poppins', sans-serif;
   background-color: #f9fafc;
   color: #2b2b2b;
+  line-height: 1.5;
 }
 
 /* Navbar */
@@ -19,12 +20,16 @@ body {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #e4e4e4;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .brand {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   color: #1a73e8;
+  letter-spacing: 0.5px;
 }
 
 .nav-links a {
@@ -32,33 +37,50 @@ body {
   text-decoration: none;
   color: #1a73e8;
   font-weight: 500;
+  transition: color 0.2s ease;
 }
 
 .nav-links a:hover {
+  color: #1558b0;
   text-decoration: underline;
 }
 
 /* Container */
 .container {
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 32px 20px;
+}
+
+/* Headings */
+h1 {
+  margin-bottom: 16px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+h2 {
+  font-size: 22px;
+  margin-bottom: 12px;
+  font-weight: 600;
 }
 
 /* Buttons */
 button {
   background-color: #1a73e8;
   color: white;
-  padding: 10px 16px;
+  padding: 10px 18px;
   border: none;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 button:hover {
   background-color: #1558b0;
+  transform: translateY(-1px);
 }
 
 button.danger {
@@ -70,35 +92,128 @@ button.danger:hover {
 }
 
 .button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 20px;
 }
 
-/* Logs */
-.log-list {
-  list-style: none;
-  padding: 0;
+/* Feedback Boxes */
+.error-box {
+  background: #f8d7da;
+  color: #842029;
+  border: 1px solid #f5c2c7;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-top: 12px;
+}
+
+.info-box {
+  background: #e7f1ff;
+  color: #084298;
+  border: 1px solid #b6d4fe;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin: 16px 0;
+}
+
+/* Result Box */
+.result-box {
+  background: #ffffff;
+  border: 1px solid #e4e4e4;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-top: 20px;
+}
+
+.result-box pre {
+  background: #f4f6f9;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  max-height: 300px;
+  font-size: 14px;
+}
+
+/* Logs Layout */
+.logs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
 }
 
 .log-card {
   background-color: #ffffff;
   border: 1px solid #e4e4e4;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.log-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
 .log-card pre {
-  margin: 8px 0;
+  background: #f4f6f9;
+  padding: 8px;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 13px;
 }
+
+/* add to App.css near .log-card rules */
+
+.log-card button {
+  background: #1a73e8;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, transform .12s ease;
+}
+.log-card button:hover { background: #1558b0; transform: translateY(-1px); }
+
+.log-actions { display:flex; gap:8px; align-items:center; }
+
+/* stats row above logs */
+.stats-row {
+  display:flex;
+  gap:12px;
+  margin-bottom: 12px;
+  flex-wrap:wrap;
+}
+.stat {
+  background: #ffffff;
+  border: 1px solid #e6eefc;
+  padding: 10px 14px;
+  border-radius: 10px;
+  min-width: 140px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+.stat .num { font-size: 18px; font-weight:700; margin-top:6px; }
+
 
 /* Badges */
 .badge {
   padding: 4px 12px;
   border-radius: 20px;
   font-weight: 600;
-  font-size: 14px;
-  display: inline-block;
+  font-size: 13px;
 }
 
 .badge.synced {
@@ -111,7 +226,45 @@ button.danger:hover {
   color: #664d03;
 }
 
-/* Optional: Result Box */
-.result-box {
-  margin-top: 20px;
+
+.scanner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.scanner-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap; /* wrap on small screens */
+}
+
+.scanner-box {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: stretch;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f6f9;
+  color: #1a73e8;
+  border: 2px dashed #1a73e8;
+  padding: 16px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 180px;
+  text-align: center;
+}
+
+.upload-btn:hover {
+  background: #eaf2fd;
 }

@@ -1,6 +1,101 @@
 /* index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
 html, body {
   height: 100%;
   margin: 0;
-  background-color: #f9fafc;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #f9fafc, #eef2f7);
+  color: #1a1a1a;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+h1, h2 {
+  font-weight: 700;
+  color: #111827;
+}
+
+button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  margin: 0.5rem;
+  border-radius: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+button.danger {
+  background: #dc2626;
+}
+
+button.danger:hover {
+  background: #b91c1c;
+}
+
+.result-box, .log-card {
+  background: #fff;
+  border-radius: 0.8rem;
+  padding: 1rem 1.5rem;
+  margin-top: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.log-list {
+  list-style: none;
+  padding: 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.badge.synced {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #111827;
+  color: #fff;
+  padding: 1rem 2rem;
+}
+
+.navbar .brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.nav-links a {
+  color: #fff;
+  margin-left: 1rem;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
 }

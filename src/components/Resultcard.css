@@ -1,0 +1,74 @@
+.result-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  padding: 20px;
+  margin-top: 20px;
+  transition: 0.3s ease;
+}
+
+.status-banner {
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 18px;
+}
+
+.status-banner.success {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.status-banner.failure {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.info-section p {
+  margin: 6px 0;
+  font-size: 15px;
+}
+
+.actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+}
+
+.actions button {
+  flex: 1;
+}
+
+.actions .secondary {
+  background: #6c757d;
+}
+
+.actions .secondary:hover {
+  background: #565e64;
+}
+
+.raw-json {
+  background: #f5f5f5;
+  padding: 12px;
+  margin-top: 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  overflow-x: auto;
+}
+
+.revocation {
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.revocation.good {
+  color: #0f5132; /* green */
+}
+
+.revocation.revoked {
+  color: #842029; /* red */
+}
+

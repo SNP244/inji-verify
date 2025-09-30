@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { BrowserQRCodeReader } from "@zxing/browser";
 
 interface QRScannerProps {
-  onScan: (text: string) => void;
+  onResult: (text: string) => void;
+  onError?: (err: string) => void;
 }
 
-const QRScanner: React.FC<QRScannerProps> = ({ onScan }) => {
+const QRScanner: React.FC<QRScannerProps> = ({ onResult, onError }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [hasCamera, setHasCamera] = useState(true);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   useEffect(() => {
     const codeReader = new BrowserQRCodeReader();
@@ -18,18 +19,21 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan }) => {
         await codeReader.decodeFromVideoDevice(
           undefined,
           videoRef.current!,
-          (result?: any) => {
+          (result, err) => {
             if (result) {
               const text = result.getText();
-              console.log("✅ QR scanned (camera) typeof:", typeof text);
-              console.log("✅ QR scanned content (first 200 chars):", text.slice(0, 200));
-              onScan(text);
+              console.log("✅ QR scanned (camera):", text.slice(0, 200));
+              onResult(text);
+            }
+            if (err && !(err.name === "NotFoundException")) {
+              console.error("QR scan error:", err);
+              onError?.(err.message || "QR scan error");
             }
           }
         );
       } catch (err) {
-        console.warn("⚠️ No camera available, switching to file upload mode.");
-        setHasCamera(false);
+        console.warn("⚠️ No camera available.");
+        setCameraError("⚠️ Could not access camera.");
       }
     };
 
@@ -41,7 +45,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan }) => {
         stream.getTracks().forEach((track) => track.stop());
       }
     };
-  }, [onScan]);
+  }, [onResult, onError]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -54,33 +58,89 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan }) => {
       const result = await codeReader.decodeFromImageUrl(url);
       if (result) {
         const text = result.getText();
-        console.log("✅ QR scanned (file) typeof:", typeof text);
-        console.log("✅ QR scanned content (first 200 chars):", text.slice(0, 200));
-        onScan(text);
+        console.log("✅ QR scanned (file):", text.slice(0, 200));
+        onResult(text);
       } else {
-        alert("❌ No QR code found in image.");
+        onError?.("❌ No QR code found in image.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("QR decode error:", err);
-      alert("❌ Failed to decode QR from image.");
+      onError?.("❌ Failed to decode QR from image.");
     }
   };
 
+  const triggerFileSelect = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
-    <div>
-      {hasCamera ? (
-        <video ref={videoRef} style={{ width: "100%" }} autoPlay />
-      ) : (
-        <div>
-          <p>📷 No camera found. Upload a QR image instead:</p>
-          <input
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-          />
-        </div>
-      )}
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 20,
+        marginTop: 16,
+      }}
+    >
+      {/* Camera Scanner Card */}
+      <div
+        style={{
+          border: "2px solid #1a73e8",
+          borderRadius: 12,
+          overflow: "hidden",
+          textAlign: "center",
+          background: "#f9fafb",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+        }}
+      >
+        <h3 style={{ margin: 0, padding: "10px", background: "#1a73e8", color: "white" }}>
+          Live Camera
+        </h3>
+        {cameraError ? (
+          <div style={{ padding: 20, color: "red", fontWeight: 500 }}>{cameraError}</div>
+        ) : (
+          <video ref={videoRef} style={{ width: "100%", height: "auto" }} autoPlay />
+        )}
+      </div>
+
+      {/* Upload Card */}
+      <div
+        style={{
+          border: "2px solid #1a73e8",
+          borderRadius: 12,
+          textAlign: "center",
+          background: "#f9fafb",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+          padding: 20,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
+        <h3 style={{ marginTop: 0, marginBottom: 16, color: "#1a73e8" }}>Upload QR</h3>
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          style={{ display: "none" }}
+        />
+        <button
+          onClick={triggerFileSelect}
+          style={{
+            backgroundColor: "#1a73e8",
+            color: "white",
+            padding: "12px 20px",
+            borderRadius: 8,
+            border: "none",
+            cursor: "pointer",
+            fontSize: 16,
+            fontWeight: 500,
+          }}
+        >
+          📂 Upload QR Code
+        </button>
+      </div>
     </div>
   );
 };

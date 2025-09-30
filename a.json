@@ -1,0 +1,19 @@
+{
+  "credential": {
+    "id": "did:example:123456789abcdefghi",
+    "credentialSubject": {
+      "id": "did:example:subject123",
+      "name": "Demo Subject",
+      "email": "demo@example.com"
+    },
+    "issuer": "did:example:issuer456",
+    "issuanceDate": "2025-09-28T10:00:00Z",
+    "expirationDate": "2026-09-28T10:00:00Z",
+    "type": ["VerifiableCredential", "DemoCredential"]
+  },
+  "verified": true,
+  "status": "success",
+  "checkedAt": "2025-09-28T10:17:43.034Z",
+  "message": "Mock verification with credential succeeded",
+  "revocationStatus": "good"
+}
