@@ -1,7 +1,5 @@
 // src/App.tsx
-import { resolveDID } from "./services/didResolver";
-import { decodePixelpassPayload } from "./services/pixelpass";
-import { getCachedDID } from "./services/didCache"; // used to "warm" DB so store appears
+
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { QRCodeVerification } from "@mosip/react-inji-verify-sdk";
@@ -40,7 +38,7 @@ import {
 import "./App.css";
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
-
+// ------------------- Scan Page -------------------
 // ------------------- Scan Page -------------------
 function ScanPage() {
   const [result, setResult] = useState<VerificationResult | null>(null);
@@ -147,8 +145,17 @@ function ScanPage() {
       const validation = validateVC(payload);
       if (!validation.valid) throw new Error(validation.msg);
 
-      const data = await resolveDID(payload);
+      const res = await fetch(`${API_BASE}/v1/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`Verification failed: ${res.status} ${res.statusText} ${txt ? "- " + txt.slice(0,200) : ""}`);
+      }
 
+      const data = await res.json();
 
       const credId =
         data?.credential?.id || data?.credential?.credentialSubject?.id || data?.subject;
@@ -184,27 +191,24 @@ function ScanPage() {
     setMessage(null);
     try {
       const validation = validateVC(data);
-if (!validation.valid) throw new Error(validation.msg);
+      if (!validation.valid) throw new Error(validation.msg);
 
-const resolved = await resolveDID(data);
+      const credId = data?.credential?.id || data?.credential?.credentialSubject?.id;
+      const revoked = credId ? await isRevoked(credId) : false;
+      const reason = credId ? await getRevocationReason(credId) : null;
 
-const credId = resolved?.credential?.id || resolved?.credential?.credentialSubject?.id;
-const revoked = credId ? await isRevoked(credId) : false;
-const reason = credId ? await getRevocationReason(credId) : null;
+      const enrichedResult: VerificationResult = {
+        ...data,
+        revocationStatus: revoked ? "revoked" : "good",
+        revocationReason: reason || undefined,
+      };
 
-const enrichedResult: VerificationResult = {
-  ...resolved,
-  revocationStatus: revoked ? "revoked" : "good",
-  revocationReason: reason || undefined,
-};
+      await storeResult(JSON.stringify(enrichedResult));
 
-await storeResult(JSON.stringify(enrichedResult));
+      if (multiScan) setSessionResults((prev) => [enrichedResult, ...prev]);
+      else setResult(enrichedResult);
 
-if (multiScan) setSessionResults((prev) => [enrichedResult, ...prev]);
-else setResult(enrichedResult);
-
-setMessage("Verification successful");
-
+      setMessage("Verification successful");
     } catch (err: any) {
       console.error("Scan error:", err);
       setError(err?.message || "Verification failed");
@@ -285,7 +289,7 @@ setMessage("Verification successful");
 
 
 
-
+// ------------------- Logs Page -------------------
 // ------------------- Logs Page -------------------
 function LogsPage() {
   const [logs, setLogs] = useState<VerificationLog[]>([]);
@@ -521,7 +525,7 @@ function App() {
   }, []);
   // ✅ Add this new useEffect here
   useEffect(() => {
-  addTestRevocation();  // Run once on startup
+  addTestRevocation();  // 👈 Run once on startup
 }, []);
 
 
